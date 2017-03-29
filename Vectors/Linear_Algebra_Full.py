@@ -12,6 +12,7 @@ class Vector(object):
     ONLY_DEFINED_IN_TWO_THREE_DIMS_MSG = "Cross-product only applicable to 2D or 3D vectors"
 
     def __init__(self, coordinates):
+        """Convert co-ordinate list to a tuple of decimal co-ordinates."""
         try:
             if not coordinates:
                 raise ValueError
@@ -31,25 +32,38 @@ class Vector(object):
         return self.coordinates == v.coordinates
 
     def add(self, v):
+        """Add two vectors to find resultant vector."""
         new_coordinates = [x + y for x,
                            y in zip(self.coordinates, v.coordinates)]
         return Vector(new_coordinates)
 
     def minus(self, v):
+        """Subtract two vectors to find the difference vector."""
         new_coordinates = [x - y for x,
                            y in zip(self.coordinates, v.coordinates)]
         return Vector(new_coordinates)
 
     def scale(self, c):
+        """Scale a vector by the given constant."""
         new_coordinates = [Decimal(c) * x for x in self.coordinates]
         return Vector(new_coordinates)
 
     def magnitude(self):
+        """
+        Find the magnitude of a vector.
+
+        |Vector (x, y, z)| = sqrt(x ^ 2 + y ^ 2 + z ^ 2)
+        """
         vector_list = [x ** 2 for x in self.coordinates]
         vector_magnitude = sqrt(sum(vector_list))
         return Decimal(vector_magnitude)
 
     def normalize(self):
+        """
+        Convert given vector to its unit vector in the same direction.
+
+        Unit Vector A = (Vector A / |Vector A|)
+        """
         try:
             vector_magnitude = self.magnitude()
             return self.scale(Decimal('1.0') / vector_magnitude)
@@ -57,11 +71,25 @@ class Vector(object):
             raise Exception(self.CANNOT_NORMALIZE_ZERO_VECTOR_MSG)
 
     def dot_product(self, v):
+        """
+        Find the dot (inner) product of two vectors.
+
+        Vector A • Vector B = |A| * |B| * cos (angle)
+
+        Simplified: Vector A • Vector B = (A[0]*B[0]) + (A[1]*B[1]) + ...
+        """
         dot_product_value = [x * y for x,
                              y in zip(self.coordinates, v.coordinates)]
         return round(sum(dot_product_value), 3)
 
     def get_degree(self, v, in_degrees=False):
+        """
+        Find the smaller angle between two vectors.
+
+        Angle between Vectors A and B = acos((Vector A • Vector B) / |A| * |B|)
+
+        Simplified: Angle = acos(Unit Vector A • Unit Vector B)
+        """
         try:
             normalize_x = self.normalize()
             normalize_y = v.normalize()
@@ -79,18 +107,31 @@ class Vector(object):
                 raise e
 
     def is_orthogonal(self, v, tolerance=1e-10):
+        """
+        Check if two vectors are perpendicular to each other.
+
+        If Vector A • Vector B = 0, A and B are orthogonal.
+        """
         return abs(self.dot_product(v)) < tolerance
 
     def is_parallel(self, v):
+        """
+        Check if two vectors are parallel to each other.
+
+        If Vector A = Constant * Vector B in the same (or opposite) direction,
+        A and B are parallel.
+        """
         return (self.is_zero() or
                 v.is_zero() or
                 self.get_degree(v) == 0 or
                 self.get_degree(v) == pi)
 
     def is_zero(self, tolerance=1e-10):
+        """Check if a vector is a zero vector."""
         return self.magnitude() < tolerance
 
     def check_vector(self, v):
+        """Performs parallel and orthogonal checks on two vectors."""
         p_true = self.is_parallel(v)
         o_true = self.is_orthogonal(v)
 
@@ -104,6 +145,13 @@ class Vector(object):
             return "neither parallel nor orthogonal..."
 
     def parallel_projection(self, basis):
+        """
+        Find the projection of given vector on basis vector.
+
+        |Projection of Vector A on Vector B| = |Vector A| * cos(angle between A and B)
+
+        Simplified: Projection of A on B = (Vector A • Unit Vector B) * Unit Vector B
+        """
         try:
             unit_vector = basis.normalize()
             scalar_coefficient = self.dot_product(unit_vector)
@@ -116,6 +164,11 @@ class Vector(object):
                 raise e
 
     def orthogonal_projection(self, basis):
+        """
+        Find the projection of given vector perpendicular to basis vector.
+
+        Perpendicular projection of A to B = Vector A - Parallel projection of A on B
+        """
         try:
             parallel_vector = self.parallel_projection(basis)
             return self.minus(parallel_vector)
@@ -127,11 +180,21 @@ class Vector(object):
                 raise e
 
     def component_vectors(self, basis):
+        """Find the parallel and orthogonal projections of a vector with respect to a basis vector."""
         parallel_projection = self.parallel_projection(basis)
         orthogonal_projection = self.orthogonal_projection(basis)
         return parallel_projection, orthogonal_projection
 
     def cross_product(self, v):
+        """
+        Find the cross-product of two (2D or 3D) vectors.
+
+        |Vector A x Vector B| = |Vector A| * |Vector B| * sin (angle)
+
+        Simplified: Vector A x Vector B = [    y1 * z2 -  y2 * z1,
+                                            - (x1 * z2 - x2 * z1),
+                                               x1 * y2 - x2 * y1 ]
+        """
         try:
             x_1, y_1, z_1 = self.coordinates
             x_2, y_2, z_2 = v.coordinates
@@ -153,10 +216,20 @@ class Vector(object):
                 raise e
 
     def parallelogram_area(self, v):
+        """
+        Find the area of parallelogram formed by two vectors.
+
+        Area = |Vector A x Vector B|
+        """
         cross_product = self.cross_product(v)
         return cross_product.magnitude()
 
     def triangle_area(self, v):
+        """
+        Find the area of triangle formed by two vectors.
+
+        Area = 0.5 * |Vector A x Vector B|
+        """
         return self.parallelogram_area(v) / Decimal('2.0')
 
 
